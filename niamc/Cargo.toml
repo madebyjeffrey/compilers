@@ -1,0 +1,12 @@
+[package]
+name = "niamc"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+lexer = { path = "../lexer" }
+
+[dependencies.clap]
+version = "4.5.49"
+default-features = true
+features = [ "derive" ]
