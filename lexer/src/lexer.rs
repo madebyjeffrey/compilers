@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+use regex::Regex;
 use crate::span::Span;
-use crate::tokens::{Token, TokenDef, TokenDefResults};
+use crate::tokens::{char_tokens, keywords, whitespace, Token, TokenDef, TokenDefResults, TokenKind};
 
 pub struct Lexer<'a> {
     pub text: &'a str,
@@ -7,6 +9,8 @@ pub struct Lexer<'a> {
     total_length: usize,
     matchers: Vec<TokenDef>,
     pub errors: Vec<Span>,
+    whitespace: Regex,
+    keywords: HashMap<&'static str, TokenKind>,
 }
 
 impl<'a> Lexer<'a> {
@@ -15,7 +19,9 @@ impl<'a> Lexer<'a> {
             position: 0,
             total_length: text.len(),
             matchers: crate::tokens::tokens_definitions(),
-            errors: Vec::new()
+            errors: Vec::new(),
+            whitespace: whitespace(),
+            keywords: keywords()
         }
     }
 
@@ -44,6 +50,18 @@ impl<'a> Iterator for Lexer<'a> {
             if self.position == self.total_length {
                 break None
             } else {
+                // check whitespace
+                if let Some(ws) = self.whitespace.find(&self.text[self.position..]) {
+                    self.position += ws.len();
+                    continue;
+                }
+
+                // check single length symbols
+                if let Some(kind) = char_tokens(&self.text[self.position..]) {
+                    self.position += 1;
+                    break Some(Token { kind, span: Span { start: self.position, len: 1 } });
+                }
+
                 // Check all regexes against the string
                 let mut results: Vec<TokenDefResults> = self.matchers.iter()
                     .map(|e| (e, e.pattern.find(&self.text[self.position..])))
@@ -53,8 +71,8 @@ impl<'a> Iterator for Lexer<'a> {
 
                 // sort descending first by length, and then by priority
                 results.sort_by(
-                    |a, b| b.matcher.len().cmp(&a.matcher.len())
-                        .then_with(|| b.def.priority.cmp(&a.def.priority)));
+                    |a, b| b.matcher.len().cmp(&a.matcher.len()));
+
 
                 // first one is the longest, highest priority match
                 let result = results.first();
@@ -65,13 +83,14 @@ impl<'a> Iterator for Lexer<'a> {
                         let span = Span { start: self.position, len: result.matcher.len() };
                         self.position += span.len;
 
-                        // check if we should skip it and continue
-                        if result.def.skip {
-                            continue;
-                        } else {
-                            // or return the token
-                            break Some(Token { kind: result.def.kind, span });
+                        let mut kind = result.def.kind;
+
+                        if kind == TokenKind::Identifier &&
+                            let Some(k) = self.keywords.get(&self.text[span.start..][..span.len]) {
+                            kind = *k;
                         }
+
+                        break Some(Token { kind, span });
                     },
                     None => {
                         // if we don't have a match add it to the error list

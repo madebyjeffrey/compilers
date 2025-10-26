@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use regex::{Match, Regex};
 use crate::span::Span;
 
@@ -18,18 +19,23 @@ pub enum TokenKind {
 
 pub struct TokenDef {
     pub kind: TokenKind,
-    pub pattern: Regex,
-    pub priority: usize,
-    pub skip: bool
+    pub pattern: Regex
+}
+
+pub fn char_tokens(str: &str) -> Option<TokenKind> {
+    match str.chars().next().unwrap() {
+        '(' => Some(TokenKind::OpenParen),
+        ')' => Some(TokenKind::CloseParen),
+        '{' => Some(TokenKind::OpenBrace),
+        '}' => Some(TokenKind::CloseBrace),
+        ';' => Some(TokenKind::Semicolon),
+        _ => None
+    }
 }
 
 impl TokenDef {
-    fn basic(kind: TokenKind, pattern: &str, priority: usize) -> TokenDef {
-        TokenDef { kind, pattern: Regex::new(pattern).unwrap(), priority, skip: false }
-    }
-
-    fn skip(kind: TokenKind, pattern: &str, priority: usize) -> TokenDef {
-        TokenDef { kind, pattern: Regex::new(pattern).unwrap(), priority, skip: true }
+    fn basic(kind: TokenKind, pattern: &str) -> TokenDef {
+        TokenDef { kind, pattern: Regex::new(pattern).unwrap() }
     }
 }
 
@@ -40,17 +46,8 @@ pub struct TokenDefResults<'a> {
 
 pub(crate) fn tokens_definitions() -> Vec<TokenDef> {
     vec![
-        TokenDef::basic(TokenKind::Identifier, r"^[a-zA-Z_]\w*\b", 10),
-        TokenDef::basic(TokenKind::Constant, r"^[0-9]+\b", 10),
-        TokenDef::basic(TokenKind::IntKeyword, r"^int\b", 30),
-        TokenDef::basic(TokenKind::VoidKeyword, r"^void\b", 30),
-        TokenDef::basic(TokenKind::ReturnKeyword, r"^return\b", 30),
-        TokenDef::basic(TokenKind::OpenParen, r"^\(", 30),
-        TokenDef::basic(TokenKind::CloseParen, r"^\)", 30),
-        TokenDef::basic(TokenKind::OpenBrace, r"^\{", 30),
-        TokenDef::basic(TokenKind::CloseBrace, r"^}", 30),
-        TokenDef::basic(TokenKind::Semicolon, r"^;", 30),
-        TokenDef::skip(TokenKind::Whitespace, r"^\s+", 30)
+        TokenDef::basic(TokenKind::Identifier, r"^[a-zA-Z_][0-9A-Za-z_]*\b"),
+        TokenDef::basic(TokenKind::Constant, r"^[0-9]+\b"),
     ]
 }
 
@@ -59,3 +56,14 @@ pub struct Token {
     pub span: Span
 }
 
+pub fn whitespace() -> Regex {
+    Regex::new(r"^\s+").unwrap()
+}
+
+pub fn keywords() -> HashMap<&'static str, TokenKind> {
+    let mut map = HashMap::new();
+    map.insert("int", TokenKind::IntKeyword);
+    map.insert("void", TokenKind::VoidKeyword);
+    map.insert("return", TokenKind::ReturnKeyword);
+    map
+}
