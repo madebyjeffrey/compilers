@@ -14,7 +14,8 @@ pub enum TokenKind {
     OpenBrace,
     CloseBrace,
     Semicolon,
-    Whitespace
+    Whitespace,
+    Invalid,
 }
 
 pub struct TokenDef {
@@ -33,22 +34,9 @@ pub fn char_tokens(str: &str) -> Option<TokenKind> {
     }
 }
 
-impl TokenDef {
-    fn basic(kind: TokenKind, pattern: &str) -> TokenDef {
-        TokenDef { kind, pattern: Regex::new(pattern).unwrap() }
-    }
-}
-
 pub struct TokenDefResults<'a> {
     pub def: &'a TokenDef,
     pub matcher: Match<'a>
-}
-
-pub(crate) fn tokens_definitions() -> Vec<TokenDef> {
-    vec![
-        TokenDef::basic(TokenKind::Identifier, r"^[a-zA-Z_][0-9A-Za-z_]*\b"),
-        TokenDef::basic(TokenKind::Constant, r"^[0-9]+\b"),
-    ]
 }
 
 pub struct Token {
@@ -66,4 +54,8 @@ pub fn keywords() -> HashMap<&'static str, TokenKind> {
     map.insert("void", TokenKind::VoidKeyword);
     map.insert("return", TokenKind::ReturnKeyword);
     map
+}
+
+pub fn identifiers_or_constant() -> Regex {
+    Regex::new(r"(^[a-zA-Z_][0-9A-Za-z_]*\b)|(^[0-9]+\b)").unwrap()
 }

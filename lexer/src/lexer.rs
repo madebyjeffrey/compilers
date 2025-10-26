@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 use regex::Regex;
 use crate::span::Span;
-use crate::tokens::{char_tokens, keywords, whitespace, Token, TokenDef, TokenDefResults, TokenKind};
+use crate::tokens::{char_tokens, identifiers_or_constant, keywords, whitespace, Token, TokenKind};
 
 pub struct Lexer<'a> {
     pub text: &'a str,
     position: usize,
     total_length: usize,
-    matchers: Vec<TokenDef>,
     pub errors: Vec<Span>,
     whitespace: Regex,
     keywords: HashMap<&'static str, TokenKind>,
+    id_const: Regex,
 }
 
 impl<'a> Lexer<'a> {
@@ -18,10 +18,10 @@ impl<'a> Lexer<'a> {
         Lexer { text,
             position: 0,
             total_length: text.len(),
-            matchers: crate::tokens::tokens_definitions(),
             errors: Vec::new(),
             whitespace: whitespace(),
-            keywords: keywords()
+            keywords: keywords(),
+            id_const: identifiers_or_constant()
         }
     }
 
@@ -62,45 +62,36 @@ impl<'a> Iterator for Lexer<'a> {
                     break Some(Token { kind, span: Span { start: self.position, len: 1 } });
                 }
 
-                // Check all regexes against the string
-                let mut results: Vec<TokenDefResults> = self.matchers.iter()
-                    .map(|e| (e, e.pattern.find(&self.text[self.position..])))
-                    .filter(|e| e.1.is_some())
-                    .map(|e| TokenDefResults { def: e.0, matcher: e.1.unwrap() })
-                    .collect();
+                if let Some(caps) = self.id_const.captures(&self.text[self.position..]) {
+                    // this value must be set as it can't determine on its own that it has been set below
+                    let mut span = Span { start: self.position, len: 1 };
+                    // this will get overwritten
+                    let mut kind = TokenKind::Invalid;
 
-                // sort descending first by length, and then by priority
-                results.sort_by(
-                    |a, b| b.matcher.len().cmp(&a.matcher.len()));
+                    if let Some(identifier) = caps.get(1) {
+                        span = Span { start: self.position, len: identifier.len() };
 
-
-                // first one is the longest, highest priority match
-                let result = results.first();
-
-                match result {
-                    // if we have a match
-                    Some(result) => {
-                        let span = Span { start: self.position, len: result.matcher.len() };
-                        self.position += span.len;
-
-                        let mut kind = result.def.kind;
-
-                        if kind == TokenKind::Identifier &&
-                            let Some(k) = self.keywords.get(&self.text[span.start..][..span.len]) {
+                        if let Some(k) = self.keywords.get(&self.text[span.start..][..span.len]) {
                             kind = *k;
+                        } else {
+                            kind = TokenKind::Identifier;
                         }
-
-                        break Some(Token { kind, span });
-                    },
-                    None => {
-                        // if we don't have a match add it to the error list
-                        let span = Span { start: self.position, len: 1 };
-                        self.position += 1;
-
-                        self.add_error_span(span);
-
-                        continue;
+                    } else if let Some(constant) = caps.get(2) {
+                        span = Span { start: self.position, len: constant.len() };
+                        kind = TokenKind::Constant;
                     }
+
+                    self.position += span.len;
+
+                    break Some(Token { kind, span });
+                } else {
+                    // if we don't have a match add it to the error list
+                    let span = Span { start: self.position, len: 1 };
+                    self.position += 1;
+
+                    self.add_error_span(span);
+
+                    continue;
                 }
             }
         }
