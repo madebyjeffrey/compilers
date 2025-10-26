@@ -1,0 +1,12 @@
+# Target directory for compiled artifacts
+/target/
+
+# Cargo-related files
+Cargo.lock
+
+# Operating system specific files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE specific files (for RustRover)
+.idea/
