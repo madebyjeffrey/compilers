@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use regex::{Match, Regex};
-use crate::span::Span;
+use common::span::Span;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum TokenKind {

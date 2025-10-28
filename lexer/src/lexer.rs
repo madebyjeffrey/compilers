@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use regex::Regex;
-use crate::span::Span;
+use common::span::Span;
 use crate::tokens::{char_tokens, identifiers_or_constant, keywords, whitespace, Token, TokenKind};
 
 pub struct Lexer<'a> {

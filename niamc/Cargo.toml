@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 lexer = { path = "../lexer" }
+common = { path = "../common" }
 
 [dependencies.clap]
 version = "4.5.49"

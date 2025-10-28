@@ -1,5 +1,4 @@
 pub mod tokens;
-pub mod span;
 pub mod lexer;
 
 pub fn add(left: u64, right: u64) -> u64 {

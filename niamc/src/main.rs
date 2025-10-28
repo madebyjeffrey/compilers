@@ -4,12 +4,11 @@ use std::process::ExitCode;
 use clap::FromArgMatches;
 use crate::arguments::{Cli, Mode};
 use crate::lexer::run_lexer;
-use crate::mapped_file::MappedFile;
 use crate::preprocess::preprocess;
+use common::mapped_file::*;
 
 mod arguments;
 mod lexer;
-mod mapped_file;
 mod preprocess;
 
 fn main() -> ExitCode {

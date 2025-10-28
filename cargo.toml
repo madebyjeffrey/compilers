@@ -1,4 +1,4 @@
 [workspace]
 resolver = "3"
-members = ["niamc", "lexer", "preprocessor"]
+members = ["niamc", "lexer", "preprocessor", "common"]
 

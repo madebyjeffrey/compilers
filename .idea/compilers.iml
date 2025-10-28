@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/niamc/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/lexer/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/preprocessor/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/common/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
