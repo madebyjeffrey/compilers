@@ -10,6 +10,7 @@ use common::mapped_file::*;
 mod arguments;
 mod lexer;
 mod preprocess;
+mod parser;
 
 fn main() -> ExitCode {
     let matches = Cli::command().get_matches();
@@ -25,12 +26,6 @@ fn main() -> ExitCode {
     }
 
     let mapped_file = MappedFile::from_string(&preprocess.unwrap());
-
-    // if let Err(x) = mapped_file {
-    //     println!("Error: {}", x);
-    //
-    //     return ExitCode::FAILURE;
-    // }
 
     let result = match cli.mode {
         Mode::Lexer => {

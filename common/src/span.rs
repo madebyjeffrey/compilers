@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Display;
 use std::ops::Range;
@@ -20,11 +21,22 @@ impl Span {
             Span::new(r2.start, r1.end- r2.start)
         }
     }
+
+    pub fn end(&self) -> usize {
+        self.start + self.len
+    }
 }
 
 impl Display for Span {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[{}, {}]", self.start, self.len)
+    }
+}
+
+impl PartialOrd for Span {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        // Compare the 'value' field to determine the order
+        self.start.partial_cmp(&other.start)
     }
 }
 

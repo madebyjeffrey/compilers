@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use regex::{Match, Regex};
 use common::span::Span;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum TokenKind {
     Identifier,
     Constant,
@@ -39,9 +39,16 @@ pub struct TokenDefResults<'a> {
     pub matcher: Match<'a>
 }
 
+#[derive(Clone, Eq, PartialEq, Debug, Copy)]
 pub struct Token {
     pub kind: TokenKind,
     pub span: Span
+}
+
+impl Token {
+    pub fn new(kind: TokenKind, span: Span) -> Token {
+        Token { kind, span }
+    }
 }
 
 pub fn whitespace() -> Regex {

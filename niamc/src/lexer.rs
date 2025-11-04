@@ -1,6 +1,6 @@
+use common::mapped_file::MappedFile;
 use lexer::lexer::Lexer;
 use lexer::tokens::Token;
-use crate::mapped_file::MappedFile;
 
 pub fn run_lexer(file: &MappedFile) -> Result<Vec<Token>, Vec<String>> {
     println!("Lexing '{}'", file.filename);

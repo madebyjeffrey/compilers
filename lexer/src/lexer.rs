@@ -40,6 +40,10 @@ impl<'a> Lexer<'a> {
             }
         }
     }
+
+    pub fn collect_tokens(&mut self) -> Vec<Token> {
+        self.by_ref().collect()
+    }
 }
 
 impl<'a> Iterator for Lexer<'a> {
@@ -95,12 +99,6 @@ impl<'a> Iterator for Lexer<'a> {
                 }
             }
         }
-    }
-}
-
-impl<'a> Lexer<'a> {
-    pub fn collect_tokens(&mut self) -> Vec<Token> {
-        self.by_ref().collect()
     }
 }
 
