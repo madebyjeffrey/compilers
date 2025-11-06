@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::num::{IntErrorKind, ParseIntError};
 use lexer::tokens::{Token, TokenKind};
 
@@ -7,6 +8,16 @@ pub enum ErrorType {
     SyntaxError(Token, TokenKind),
     UnexpectedEOF(TokenKind),
     InvalidNumber(Token, IntParseError),
+}
+
+impl Display for ErrorType {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        match self {
+            ErrorType::SyntaxError(token, kind) => {
+                
+            }
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Eq)]

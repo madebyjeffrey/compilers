@@ -7,6 +7,7 @@ edition = "2024"
 lexer = { path = "../lexer" }
 common = { path = "../common" }
 parser = { path = "../parser" }
+codespan-reporting = "0.13.1"
 
 [dependencies.clap]
 version = "4.5.49"

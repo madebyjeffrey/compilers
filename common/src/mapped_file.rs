@@ -1,5 +1,7 @@
 use std::fs::File;
 use std::io::{BufReader, Read};
+use std::ops::Range;
+use codespan_reporting::files::{Error, Files};
 
 #[derive()]
 pub struct MappedFile {
@@ -90,6 +92,28 @@ impl MappedFile {
         }
 
         None
+    }
+}
+
+impl<'a> Files<'a> for MappedFile {
+    type FileId = &'a str;
+    type Name = &'a str;
+    type Source = &'a str;
+
+    fn name(&'a self, id: Self::FileId) -> Result<Self::Name, Error> {
+        Ok(self.filename.as_str())
+    }
+
+    fn source(&'a self, id: Self::FileId) -> Result<Self::Source, Error> {
+        Ok(self.contents.as_str())
+    }
+
+    fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Result<usize, Error> {
+        todo!()
+    }
+
+    fn line_range(&'a self, id: Self::FileId, line_index: usize) -> Result<Range<usize>, Error> {
+        todo!()
     }
 }
 
