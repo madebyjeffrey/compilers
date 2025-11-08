@@ -48,15 +48,15 @@ impl FromArgMatches for Mode {
 
 #[derive(Debug)]
 pub struct Cli {
-    pub file: String,
+    pub filename: String,
     pub mode: Mode
 }
 
 impl FromArgMatches for Cli {
     fn from_arg_matches(matches: &ArgMatches) -> Result<Self, clap::Error> {
         Ok(Self {
-            file: matches
-                .get_one::<String>("file")
+            filename: matches
+                .get_one::<String>("filename")
                 .expect("file is required")
                 .clone(),
             mode: Mode::from_arg_matches(matches)?,
@@ -64,7 +64,7 @@ impl FromArgMatches for Cli {
     }
 
     fn update_from_arg_matches(&mut self, matches: &ArgMatches) -> Result<(), clap::Error> {
-        self.file = matches
+        self.filename = matches
             .get_one::<String>("file")
             .expect("file is required")
             .clone();

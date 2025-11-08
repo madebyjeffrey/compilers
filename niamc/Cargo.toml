@@ -8,6 +8,7 @@ lexer = { path = "../lexer" }
 common = { path = "../common" }
 parser = { path = "../parser" }
 codespan-reporting = "0.13.1"
+ariadne = { version = "0.6.0", features = ["auto-color"] }
 
 [dependencies.clap]
 version = "4.5.49"
