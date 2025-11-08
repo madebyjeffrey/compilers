@@ -1,13 +1,13 @@
+use ariadne::Source;
 use codespan_reporting::diagnostic::Diagnostic;
 use codespan_reporting::files::Files;
 use lexer::lexer::Lexer;
 use lexer::tokens::Token;
-use crate::files::SimpleFile;
 
-pub fn run_lexer(file: &SimpleFile) -> Result<Vec<Token>, Vec<String>> {
+pub fn run_lexer(file: &Source) -> Result<Vec<Token>, Vec<String>> {
     println!("Lexing '{}'", file.name());
 
-    let mut lexer = Lexer::new(&file.source());
+    let mut lexer = Lexer::new(&file.text());
     let tokens: Vec<Token> = lexer.collect_tokens();
 
     if lexer.errors.len() > 0 {

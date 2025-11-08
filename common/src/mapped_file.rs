@@ -4,16 +4,17 @@ use std::ops::Range;
 use codespan_reporting::files::{Error, Files};
 
 #[derive()]
-pub struct MappedFile {
+pub struct SourceFile {
+    pub id: Option<String>,
     pub filename: String,
     pub contents: String,
-    pub lines_offsets: Vec<usize>,
+    lines_offsets: Vec<usize>,
     pub length: usize,
 }
 
-impl MappedFile {
+impl SourceFile {
     #[allow(unused)]
-    pub fn from_file(filename: &str) -> Result<Self, String> {
+    pub fn from_file(id: Option<String>, filename: &str) -> Result<Self, String> {
         let f = File::open(filename);
 
         match f {
@@ -27,6 +28,7 @@ impl MappedFile {
                         let offsets = Self::offsets(&contents);
 
                         Ok(Self {
+                            id,
                             filename: filename.to_string(),
                             contents,
                             length: size,
@@ -40,10 +42,11 @@ impl MappedFile {
         }
     }
 
-    pub fn from_string(input: &str) -> Self {
+    pub fn from_string(id: Option<String>, input: &str) -> Self {
         let offsets = Self::offsets(&input);
 
-        MappedFile {
+        SourceFile {
+            id,
             filename: "(buffer)".parse().unwrap(),
             contents: input.to_string(),
             lines_offsets: offsets,
@@ -61,6 +64,10 @@ impl MappedFile {
         }
 
         offsets
+    }
+    
+    pub fn set_id(&mut self, id: String) {
+        self.id = Some(id);
     }
 
     pub fn line_pos_from_offset(&self, offset: usize) -> Option<(usize, usize)> {
@@ -95,28 +102,6 @@ impl MappedFile {
     }
 }
 
-impl<'a> Files<'a> for MappedFile {
-    type FileId = &'a str;
-    type Name = &'a str;
-    type Source = &'a str;
-
-    fn name(&'a self, id: Self::FileId) -> Result<Self::Name, Error> {
-        Ok(self.filename.as_str())
-    }
-
-    fn source(&'a self, id: Self::FileId) -> Result<Self::Source, Error> {
-        Ok(self.contents.as_str())
-    }
-
-    fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Result<usize, Error> {
-        todo!()
-    }
-
-    fn line_range(&'a self, id: Self::FileId, line_index: usize) -> Result<Range<usize>, Error> {
-        todo!()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,11 +115,11 @@ mod tests {
 
     #[test]
     fn file_map_should_be_created() {
-        let fm = MappedFile::from_string(TEST1);
+        let fm = SourceFile::from_string(None, TEST1);
 
         assert_eq!(fm.lines_offsets.len(), 3);
 
-        let fm2 = MappedFile::from_string(TEST2);
+        let fm2 = SourceFile::from_string(None, TEST2);
 
         // last line is handled separately now
         assert_eq!(fm2.lines_offsets.len(), 3);
@@ -142,7 +127,7 @@ mod tests {
 
     #[test]
     fn file_map_should_get_line_position_at_start() {
-        let fm = MappedFile::from_string(TEST1);
+        let fm = SourceFile::from_string(None, TEST1);
 
         let case1 = fm.line_pos_from_offset(0);
         assert_eq!(case1.unwrap(), (1, 1));
@@ -150,7 +135,7 @@ mod tests {
 
     #[test]
     fn file_map_should_get_first_line_positions() {
-        let fm = MappedFile::from_string(TEST1);
+        let fm = SourceFile::from_string(None, TEST1);
 
         assert_eq!(fm.line_pos_from_offset(0).unwrap(), (1, 1));
         assert_eq!(fm.line_pos_from_offset(1).unwrap(), (1, 2));
@@ -162,7 +147,7 @@ mod tests {
 
     #[test]
     fn file_map_should_get_second_line_positions() {
-        let fm = MappedFile::from_string(TEST1);
+        let fm = SourceFile::from_string(None, TEST1);
 
         assert_eq!(fm.line_pos_from_offset(6).unwrap(), (2, 1));
         assert_eq!(fm.line_pos_from_offset(7).unwrap(), (2, 2));
@@ -174,7 +159,7 @@ mod tests {
 
     #[test]
     fn file_map_should_get_last_line_positions_without_ending_lf() {
-        let fm = MappedFile::from_string(TEST2);
+        let fm = SourceFile::from_string(None, TEST2);
 
         assert_eq!(fm.line_pos_from_offset(18).unwrap(), (4, 1));
         assert_eq!(fm.line_pos_from_offset(19).unwrap(), (4, 2));
@@ -184,7 +169,7 @@ mod tests {
 
     #[test]
     fn file_map_should_work_empty() {
-        let fm = MappedFile::from_string(TEST3);
+        let fm = SourceFile::from_string(None, TEST3);
 
         assert_eq!(fm.line_pos_from_offset(0), None);
         assert_eq!(fm.line_pos_from_offset(5), None);
@@ -192,7 +177,7 @@ mod tests {
 
     #[test]
     fn file_map_should_work_with_one_line_no_lf() {
-        let fm = MappedFile::from_string(TEST4);
+        let fm = SourceFile::from_string(None, TEST4);
 
         assert_eq!(fm.line_pos_from_offset(0).unwrap(), (1, 1));
         assert_eq!(fm.line_pos_from_offset(5), None);
