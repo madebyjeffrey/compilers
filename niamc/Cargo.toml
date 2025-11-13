@@ -7,10 +7,6 @@ edition = "2024"
 lexer = { path = "../lexer" }
 common = { path = "../common" }
 parser = { path = "../parser" }
-codespan-reporting = "0.13.1"
 ariadne = { version = "0.6.0", features = ["auto-color"] }
+argh = { version = "0.1.13" }
 
-[dependencies.clap]
-version = "4.5.49"
-default-features = true
-features = [ "derive" ]

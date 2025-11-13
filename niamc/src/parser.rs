@@ -1,8 +1,8 @@
-use common::mapped_file::MappedFile;
-use lexer::lexer::Lexer;
+use ariadne::{Color, Label, Report, ReportKind};
+use common::source_file::SourceFile;
 use lexer::tokens::Token;
 use parser::ast::Program;
-use parser::errors::ErrorType;
+use parser::errors::ParseError;
 use parser::parser::Parser;
 use parser::token_collection::TokenCollection;
 
@@ -12,36 +12,54 @@ I usually implement this by parsing in terms of a "cursor" which is just a slice
 
  */
 
-pub fn run_parser(file: &MappedFile, tokens: Vec<Token>) -> Result<Program, ErrorType> {
+#[allow(unused)]
+pub fn run_parser(file: &SourceFile, tokens: Vec<Token>, explain: bool) -> Option<Program> {
     println!("Parsing '{}'", file.filename);
 
     let token_col = TokenCollection::new(tokens);
 
-    let mut parser = Parser::new(token_col, &file.contents);
+    let mut parser = Parser::new(token_col, &file.source.text());
 
     let parsed = parser.run();
 
     match parsed {
-        Ok(program) => Ok(program),
-        Err(error) => {
+        Ok(program) => {
+            if explain {
+                println!("{:#?}", program);
+            }
+
+            Some(program)
+        }
+        Err(ParseError::UnexpectedEOF(token)) => {
+            let _  = Report::build(ReportKind::Error, file.eof())
+                .with_message(format!("Unexpected end of file, expected token '{:?}'", token))
+                .finish()
+                .print(file);
+            None
+        },
+        Err(ParseError::SyntaxError(found, wanted)) => {
+            let _ = Report::build(ReportKind::Error, found.span)
+                .with_message(format!("Syntax error. Expected token '{:?}'", wanted))
+                .finish()
+                .print(file);
+            None
+        },
+        Err(ParseError::InvalidNumber(found, error)) => {
+            let _ = Report::build(ReportKind::Error, found.span)
+                .with_message(format!("Invalid constant: '{:?}'", error))
+                .finish()
+                .print(file);
+            None
+        },
+        Err(ParseError::ExpectingEOF(token)) => {
+            let _ = Report::build(ReportKind::Error, token.span.clone())
+                .with_message(format!("Expecting EOF"))
+                .with_label(Label::new(token.span)
+                    .with_message("Unexpected token here.")
+                    .with_color(Color::Primary))
+                .finish()
+                .print(file);
+            None
         }
     }
-
-    if parsed.errors.len() > 0 {
-    //     let mut errors: Vec<String> = Vec::new();
-    //
-    //     for error in lexer.errors {
-    //         let location = file.line_pos_from_offset(error.start);
-    //
-    //         if let Some((line, col)) = location {
-    //             let bad_text = &lexer.text[error.start..][..error.len];
-    //             let e = format!("Invalid token at line {}, column {}, for {} characters: <{}>", line, col, error.len, bad_text);
-    //             errors.push(e);
-    //         }
-    //     }
-    //
-    //     return Err(errors);
-    // }
-    //
-    // Ok(tokens)
 }

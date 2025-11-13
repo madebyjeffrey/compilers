@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::{Debug, Display};
 use regex::{Match, Regex};
 use common::span::Span;
 
@@ -16,6 +17,12 @@ pub enum TokenKind {
     Semicolon,
     Whitespace,
     Invalid,
+}
+
+impl Display for TokenKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(self, f)
+    }
 }
 
 pub struct TokenDef {
@@ -39,7 +46,7 @@ pub struct TokenDefResults<'a> {
     pub matcher: Match<'a>
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Copy)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Token {
     pub kind: TokenKind,
     pub span: Span
@@ -48,6 +55,9 @@ pub struct Token {
 impl Token {
     pub fn new(kind: TokenKind, span: Span) -> Token {
         Token { kind, span }
+    }
+    pub fn explain(&self, source: &str) -> String {
+        format!("[{}]:{} text: \"{}\"", self.kind, self.span, &source[self.span.range()])
     }
 }
 
@@ -65,4 +75,24 @@ pub fn keywords() -> HashMap<&'static str, TokenKind> {
 
 pub fn identifiers_or_constant() -> Regex {
     Regex::new(r"(^[a-zA-Z_][0-9A-Za-z_]*\b)|(^[0-9]+\b)").unwrap()
+}
+
+pub fn multiline_comment_start() -> Regex {
+    Regex::new(r"^/\*").unwrap()
+}
+
+pub fn multiline_comment_end() -> Regex {
+    Regex::new(r"\*/").unwrap()
+}
+
+pub fn multiline_comment_start_or_end() -> Regex {
+    Regex::new(r"/\*|\*/").unwrap()
+}
+
+pub fn single_line_comment_start() -> Regex {
+    Regex::new(r"^//").unwrap()
+}
+
+pub fn newline() -> Regex {
+    Regex::new(r"\n|\r\n").unwrap()
 }

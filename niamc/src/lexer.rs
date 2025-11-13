@@ -1,38 +1,64 @@
-use ariadne::Source;
-use codespan_reporting::diagnostic::Diagnostic;
-use codespan_reporting::files::Files;
-use lexer::lexer::Lexer;
+use ariadne::{Color, Label, Report, ReportKind};
+use common::source_file::SourceFile;
+use lexer::lexer::{Lexer, LexerError};
 use lexer::tokens::Token;
 
-pub fn run_lexer(file: &Source) -> Result<Vec<Token>, Vec<String>> {
-    println!("Lexing '{}'", file.name());
+pub fn run_lexer(file: &SourceFile, explain: bool) -> Option<Vec<Token>> {
+    println!("Lexing '{}'", file.filename);
 
-    let mut lexer = Lexer::new(&file.text());
-    let tokens: Vec<Token> = lexer.collect_tokens();
+    let mut lexer = Lexer::new(&file.source.text());
+    let (tokens, errors) = lexer.run();
 
-    if lexer.errors.len() > 0 {
-        let mut errors: Vec<Diagnostic<String>> = Vec::new();
+    if tokens.len() > 0 && explain {
+       for token in &tokens {
+           println!("{}", token.explain(&file.source.text()));
+       }
+    }
 
+    if errors.len() > 0 {
         for error in lexer.errors {
-            match file.location((), error.start) {
-                // Handle errors that shouldn't happen
-                Err(e) => {
-                    errors.push(Diagnostic::error()
-                        .with_message("Internal error during lexing.")
-                        .with_note(format_args!("Notes for investigation: {}", e)));
+            match error {
+                LexerError::UnexpectedEofInsideComment(span) => {
+                    Report::build(ReportKind::Error, span.clone())
+                        .with_code("L001")
+                        .with_message("Comment started but not finished before end of file.")
+                        .with_label(Label::new(span)
+                            .with_message("Comment starts here")
+                            .with_color(Color::Primary))
+                        .finish()
+                        .eprint(file)
+                        .unwrap();
+                },
+                LexerError::NestedComment(comment_start, nested_comment_start) => {
+                    Report::build(ReportKind::Error, comment_start.clone())
+                        .with_code("L002")
+                        .with_message("Unknown token.")
+                        .with_label(Label::new(comment_start)
+                            .with_message("Comment starts here")
+                            .with_color(Color::Primary))
+                        .with_label(Label::new(nested_comment_start)
+                            .with_message("Nested comment starts here")
+                            .with_color(Color::Primary))
+                        .finish()
+                        .eprint(file)
+                        .unwrap();
+                },
+                LexerError::UnknownToken(span) => {
+                    Report::build(ReportKind::Error, span.clone())
+                        .with_code("L003")
+                        .with_message("Unknown token.")
+                        .with_label(Label::new(span)
+                            .with_message("Unknown token")
+                            .with_color(Color::Primary))
+                        .finish()
+                        .eprint(file)
+                        .unwrap();
                 },
             }
         }
 
-        if let Some((line, col)) = location {
-                let bad_text = &lexer.text[error.start..][..error.len];
-                let e = format!("Invalid token at line {}, column {}, for {} characters: <{}>", line, col, error.len, bad_text);
-                errors.push(e);
-            }
-        }
-
-        return Err(errors);
+        return None;
     }
 
-    Ok(tokens)
+    Some(tokens)
 }

@@ -1,23 +1,13 @@
-use std::fmt::Display;
 use std::num::{IntErrorKind, ParseIntError};
 use lexer::tokens::{Token, TokenKind};
 
-#[derive(Debug, PartialEq, Clone, Eq, Copy)]
+#[derive(Debug, PartialEq, Clone, Eq)]
 #[allow(dead_code)]
-pub enum ErrorType {
+pub enum ParseError {
     SyntaxError(Token, TokenKind),
     UnexpectedEOF(TokenKind),
     InvalidNumber(Token, IntParseError),
-}
-
-impl Display for ErrorType {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
-        match self {
-            ErrorType::SyntaxError(token, kind) => {
-                
-            }
-        }
-    }
+    ExpectingEOF(Token),
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Eq)]

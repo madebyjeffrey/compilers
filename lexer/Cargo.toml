@@ -6,4 +6,5 @@ edition = "2024"
 [dependencies]
 common = { path = "../common" }
 regex = "1.12.2"
-codespan-reporting = "0.13.1"
+ariadne = "0.6.0"
+assert_matches = "1.5.0"

@@ -1,5 +1,5 @@
 use lexer::tokens::{Token, TokenKind};
-use crate::errors::ErrorType;
+use crate::errors::ParseError;
 
 #[allow(dead_code)]
 pub struct TokenCollection {
@@ -25,25 +25,33 @@ impl TokenCollection {
         }
     }
 
-    pub fn expect(&mut self, kind: TokenKind) -> Result<Token, ErrorType> {
+    pub fn expect(&mut self, kind: TokenKind) -> Result<Token, ParseError> {
         let actual = self.take_token();
 
         if let Some(actual_kind) = actual {
             if actual_kind.kind == kind {
-                Ok(*actual_kind)
+                Ok(actual_kind.clone())
             } else {
-                Err(ErrorType::SyntaxError(*actual_kind, kind))
+                Err(ParseError::SyntaxError(actual_kind.clone(), kind))
             }
         } else {
-            Err(ErrorType::UnexpectedEOF(kind))
+            Err(ParseError::UnexpectedEOF(kind))
         }
+    }
+    
+    pub fn is_empty(&self) -> bool {
+        !(self.index < self.tokens.len()) 
+    }
+    
+    pub fn last(&self) -> Option<&Token> {
+        self.tokens.last()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use common::span::Span;
-    use crate::token_collection::ErrorType::{UnexpectedEOF};
+    use crate::token_collection::ParseError::{UnexpectedEOF};
     use super::*;
 
     #[test]

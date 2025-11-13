@@ -2,16 +2,23 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Display;
 use std::ops::Range;
+use ariadne::Span as ASpan;
+use crate::source_file::Id;
 
-#[derive(Debug, PartialEq, Clone, Copy, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
 pub struct Span {
-    pub start: usize,
-    pub len: usize
+    _unit: Id,
+    _start: usize,
+    _len: usize
 }
 
 impl Span {
     pub fn new(start: usize, len: usize) -> Span {
-        Span { start, len }
+        Span { _unit: Id::Main, _start: start, _len: len }
+    }
+
+    pub fn new_with_unit(start: usize, len: usize, unit: Id) -> Span {
+        Span { _unit: unit, _start: start, _len: len }
     }
 
     pub fn combine_ranges(r1: Range<usize>, r2: Range<usize>) -> Span {
@@ -22,21 +29,47 @@ impl Span {
         }
     }
 
-    pub fn end(&self) -> usize {
-        self.start + self.len
+    pub fn expand(&mut self, len: usize) {
+        self._len += len;
+    }
+
+    pub fn range(&self) -> Range<usize> {
+        self._start..self._start + self._len
+    }
+}
+
+impl From<Range<usize>> for Span {
+    fn from(r: Range<usize>) -> Span {
+        Span::new(r.start, r.end - r.start)
+    }
+}
+
+impl ASpan for Span {
+    type SourceId = Id;
+
+    fn source(&self) -> &Self::SourceId {
+        &self._unit
+    }
+
+    fn start(&self) -> usize {
+        self._start
+    }
+
+    fn end(&self) -> usize {
+        self._start.saturating_add(self._len)
     }
 }
 
 impl Display for Span {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[{}, {}]", self.start, self.len)
+        write!(f, "[{}..{}]", self._start, self.end())
     }
 }
 
 impl PartialOrd for Span {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Compare the 'value' field to determine the order
-        self.start.partial_cmp(&other.start)
+        self._start.partial_cmp(&other._start)
     }
 }
 
@@ -64,7 +97,14 @@ mod tests {
 
         let span = Span::combine_ranges(range1, range2);
 
-        assert_eq!(span.start, 3);
-        assert_eq!(span.len, 5);
+        assert_eq!(span._start, 3);
+        assert_eq!(span._len, 5);
+    }
+
+    #[test]
+    fn test_range() {
+        let span1 = Span::new(0, 2);
+
+        assert_eq!(span1.range(), 0..2);
     }
 }

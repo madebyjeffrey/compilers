@@ -1,2 +1,2 @@
-pub mod mapped_file;
+pub mod source_file;
 pub mod span;

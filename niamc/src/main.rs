@@ -1,64 +1,82 @@
 // never in a million c's
 
 use std::process::ExitCode;
-use clap::FromArgMatches;
-use codespan_reporting::files::SimpleFile;
-use crate::arguments::{Cli, Mode};
+use argh::FromArgs;
+use common::source_file::{Id, SourceFile};
 use crate::lexer::run_lexer;
-use crate::preprocess::preprocess;
-use common::mapped_file::*;
-use crate::files::{file_contents, load_file};
+use crate::parser::run_parser;
 
-mod arguments;
 mod lexer;
-mod preprocess;
 mod parser;
-mod files;
+
+#[derive(FromArgs)]
+#[argh(description = "Minimal C Compiler")]
+pub struct Arguments {
+    #[argh(switch, short = 'e', description = "enable debug logging")]
+    pub explain: bool,
+
+    #[argh(switch, description = "lex the input file")]
+    pub lex: bool,
+
+    #[argh(switch, description = "parse the input file")]
+    pub parse: bool,
+
+    #[argh(positional, description = "the file to read")]
+    pub input: String,
+}
 
 fn main() -> ExitCode {
-    let matches = Cli::command().get_matches();
-    let cli = Cli::from_arg_matches(&matches).unwrap();
+    let mut args: Arguments = argh::from_env();
 
-    println!("File: {}", cli.filename);
-
-    let preprocess = preprocess(&cli.filename);
-
-    if let None = preprocess {
-        println!("Couldn't preprocess");
-        return ExitCode::FAILURE;
+    if !args.lex && !args.parse {
+        args.parse = true;
     }
 
-    let sfile = match load_file(&cli.filename) {
-        Err(err) => {
-            println!("Couldn't read file: {}", err);
-            return ExitCode::FAILURE;
-        },
-        Ok(sfile) => sfile,
-    };
+    if args.lex && args.parse {
+        args.lex = false;
+    }
 
-    let result = match cli.mode {
-        Mode::Lexer => {
-            println!("Lexing '{}'", cli.filename);
-
-            let results = run_lexer(&mapped_file);
-
-            if let Err(x) = results {
-                eprintln!("Error lexing:");
-                x.iter().for_each(|x| eprintln!("{}", x));
+    if args.lex {
+        let mut main = match SourceFile::from_file(Id::Main, &args.input) {
+            Err(err) => {
+                println!("Couldn't read file: {}", err);
                 return ExitCode::FAILURE;
-            }
+            },
+            Ok(main) => main,
+        };
 
-            return ExitCode::SUCCESS;
-        },
-        Mode::Parse => {
-            println!("Lexing, then parsing '{}'", cli.filename);
-            0
-        },
-        Mode::CodeGen => {
-            println!("Lexing, parsing, then codegen '{}'", cli.filename);
-            0
+        return match run_lexer(&mut main, args.explain) {
+            Some(_) => {
+                println!("Lexer lexed successfully");
+                ExitCode::SUCCESS
+            },
+            None => ExitCode::FAILURE
         }
-    };
+    }
 
-    ExitCode::from(result)
+    if args.parse {
+        let mut main = match SourceFile::from_file(Id::Main, &args.input) {
+            Err(err) => {
+                println!("Couldn't read file: {}", err);
+                return ExitCode::FAILURE;
+            },
+            Ok(main) => main,
+        };
+
+        return match run_lexer(&mut main, args.explain) {
+            Some(tokens) => {
+                println!("Lexer lexed successfully");
+
+                if let Some(_) = run_parser(&mut main, tokens, args.explain) {
+                    println!("Parsed successfully");
+                    return ExitCode::SUCCESS;
+                }
+
+                ExitCode::FAILURE
+            },
+            None => ExitCode::FAILURE
+        }
+    }
+
+    ExitCode::SUCCESS
 }
