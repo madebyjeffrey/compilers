@@ -1,5 +1,5 @@
 use std::num::{IntErrorKind, ParseIntError};
-use lexer::tokens::{Token, TokenKind};
+use crate::phases::lexical_analysis::tokens::{Token, TokenKind};
 
 #[derive(Debug, PartialEq, Clone, Eq)]
 #[allow(dead_code)]

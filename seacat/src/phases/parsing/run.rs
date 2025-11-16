@@ -1,10 +1,11 @@
 use ariadne::{Color, Label, Report, ReportKind};
+use common::compiler::{HasDebug, Phase};
 use common::source_file::SourceFile;
-use lexer::tokens::Token;
-use parser::ast::Program;
-use parser::errors::ParseError;
-use parser::parser::Parser;
-use parser::token_collection::TokenCollection;
+use super::super::lexical_analysis::tokens::Token;
+use super::ast::Program;
+use super::errors::ParseError;
+use super::parser::Parser;
+use super::token_collection::TokenCollection;
 
 /* T-Dark, Speedrun World Champion — 1:37 AM
 In an ideal world, if parsing fails it doesn't consume any tokens so you don't need to backtrack, but in more complex cases backtracking is admittedly required
@@ -13,7 +14,7 @@ I usually implement this by parsing in terms of a "cursor" which is just a slice
  */
 
 #[allow(unused)]
-pub fn run_parser(file: &SourceFile, tokens: Vec<Token>, explain: bool) -> Option<Program> {
+pub fn run_parser(file: &SourceFile, has_debug: &dyn HasDebug, tokens: Vec<Token>) -> Option<Program> {
     println!("Parsing '{}'", file.filename);
 
     let token_col = TokenCollection::new(tokens);
@@ -24,7 +25,7 @@ pub fn run_parser(file: &SourceFile, tokens: Vec<Token>, explain: bool) -> Optio
 
     match parsed {
         Ok(program) => {
-            if explain {
+            if has_debug.is_debug(Phase::Parse) {
                 println!("{:#?}", program);
             }
 

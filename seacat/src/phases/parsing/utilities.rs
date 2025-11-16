@@ -1,5 +1,5 @@
-use lexer::tokens::Token;
-use crate::errors::{ParseError, IntParseError};
+use crate::phases::lexical_analysis::tokens::Token;
+use super::errors::{ParseError, IntParseError};
 
 pub fn parse_number(text: &str, token: &Token) -> Result<i64, ParseError> {
     match i64::from_str_radix(text, 10) {

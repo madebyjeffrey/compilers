@@ -2,7 +2,7 @@ use ariadne::Span as ASpan;
 use std::collections::HashMap;
 use regex::Regex;
 use common::span::Span;
-use crate::tokens::{char_tokens, identifiers_or_constant, keywords, multiline_comment_start, multiline_comment_start_or_end, newline, single_line_comment_start, whitespace, Token, TokenKind};
+use crate::phases::lexical_analysis::tokens::{char_tokens, identifiers_or_constant, keywords, multiline_comment_start, multiline_comment_start_or_end, newline, single_line_comment_start, whitespace, Token, TokenKind};
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum LexerError {
@@ -159,7 +159,7 @@ impl<'a> Iterator for Lexer<'a> {
 mod tests {
     use std::ops::Range;
     use assert_matches::assert_matches;
-    use crate::tokens::TokenKind;
+    use crate::phases::lexical_analysis::tokens::TokenKind;
     use super::*;
 
     #[test]

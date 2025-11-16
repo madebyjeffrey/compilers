@@ -1,5 +1,5 @@
-use lexer::tokens::{Token, TokenKind};
-use crate::errors::ParseError;
+use crate::phases::lexical_analysis::tokens::{Token, TokenKind};
+use super::errors::ParseError;
 
 #[allow(dead_code)]
 pub struct TokenCollection {
@@ -7,7 +7,7 @@ pub struct TokenCollection {
     pub index: usize,
 }
 
-impl TokenCollection {
+impl<'a> TokenCollection {
     pub fn new(tokens: Vec<Token>) -> TokenCollection {
         TokenCollection {
             tokens,
@@ -51,7 +51,7 @@ impl TokenCollection {
 #[cfg(test)]
 mod tests {
     use common::span::Span;
-    use crate::token_collection::ParseError::{UnexpectedEOF};
+    use crate::phases::parsing::errors::ParseError::UnexpectedEOF;
     use super::*;
 
     #[test]

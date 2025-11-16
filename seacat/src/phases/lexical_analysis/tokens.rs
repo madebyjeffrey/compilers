@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
-use regex::{Match, Regex};
+use regex::{Regex};
 use common::span::Span;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -15,7 +15,6 @@ pub enum TokenKind {
     OpenBrace,
     CloseBrace,
     Semicolon,
-    Whitespace,
     Invalid,
 }
 
@@ -25,10 +24,6 @@ impl Display for TokenKind {
     }
 }
 
-pub struct TokenDef {
-    pub kind: TokenKind,
-    pub pattern: Regex
-}
 
 pub fn char_tokens(str: &str) -> Option<TokenKind> {
     match str.chars().next().unwrap() {
@@ -39,11 +34,6 @@ pub fn char_tokens(str: &str) -> Option<TokenKind> {
         ';' => Some(TokenKind::Semicolon),
         _ => None
     }
-}
-
-pub struct TokenDefResults<'a> {
-    pub def: &'a TokenDef,
-    pub matcher: Match<'a>
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -79,10 +69,6 @@ pub fn identifiers_or_constant() -> Regex {
 
 pub fn multiline_comment_start() -> Regex {
     Regex::new(r"^/\*").unwrap()
-}
-
-pub fn multiline_comment_end() -> Regex {
-    Regex::new(r"\*/").unwrap()
 }
 
 pub fn multiline_comment_start_or_end() -> Regex {

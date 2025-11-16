@@ -1,9 +1,9 @@
 use common::span::Span;
-use lexer::tokens::{TokenKind};
-use crate::ast::{Expression, FunctionDefinition, Program, Statement};
-use crate::errors::ParseError;
-use crate::token_collection::{TokenCollection};
-use crate::utilities::parse_number;
+use crate::phases::lexical_analysis::tokens::TokenKind;
+use super::ast::{Expression, FunctionDefinition, Program, Statement};
+use super::errors::ParseError;
+use super::token_collection::{TokenCollection};
+use super::utilities::parse_number;
 
 pub struct Parser<'a> {
     tokens: TokenCollection,
