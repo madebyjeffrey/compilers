@@ -14,14 +14,54 @@ pub trait HasDebug {
     fn is_debug(&self, phase: Phase) -> bool;
 }
 
+pub trait Lexer {
+    type Token: Clone;
+    fn lex(&self, file: &SourceFile, has_debug: &dyn HasDebug) -> Option<Vec<Self::Token>>;
+}
+
+impl<F, Token: Clone> Lexer for F
+where
+    F: Fn(&SourceFile, &dyn HasDebug) -> Option<Vec<Token>>,
+{
+    type Token = Token;
+
+    fn lex(&self, file: &SourceFile, has_debug: &dyn HasDebug) -> Option<Vec<Self::Token>> {
+        (self)(file, has_debug)
+    }
+}
+
+pub trait Parser<Token> {
+    type Production;
+
+    fn parse(
+        &self, file: &SourceFile, has_debug: &dyn HasDebug, tokens: Vec<Token>) -> Option<Self::Production>;
+}
+
+impl<F, Token, Production> Parser<Token> for F
+where
+    F: Fn(&SourceFile, &dyn HasDebug, Vec<Token>) -> Option<Production>,
+{
+    type Production = Production;
+    fn parse(&self, file: &SourceFile, has_debug: &dyn HasDebug, tokens: Vec<Token>) -> Option<Self::Production> {
+        (self)(file, has_debug, tokens)
+    }
+}
+
+
 pub struct Compiler {
     debug: bool,
     final_phase: Phase,
 }
 
-impl<'a> Compiler {
+impl Compiler {
     pub fn new() -> Self {
         Self { debug: false, final_phase: Phase::None }
+    }
+
+
+    pub fn with_lexer<L>(self, lexer: L) -> WithLexer<L>
+    where L: Lexer {
+        WithLexer { compiler: self, lexer }
     }
 
     pub fn compile(&mut self, upto_phase: Phase, debug: bool, file_path: &str) -> Result<SourceFile, ExitCode> {
@@ -34,11 +74,6 @@ impl<'a> Compiler {
 
         Ok(main)
     }
-
-    pub fn with_lexer<L, Token>(self, lexer: L) -> WithLexer<L, Token>
-        where L: Fn(&SourceFile, &dyn HasDebug) -> Option<Vec<Token>> {
-        WithLexer { compiler: self, lexer }
-    }
 }
 
 impl HasDebug for Compiler {
@@ -47,57 +82,51 @@ impl HasDebug for Compiler {
     }
 }
 
-pub struct WithLexer<L, Token>
-    where L: Fn(&SourceFile, &dyn HasDebug) -> Option<Vec<Token>> {
+pub struct WithLexer<L> {
     compiler: Compiler,
     lexer: L,
 }
 
-impl<L, Token> WithLexer<L, Token>
-    where L: Fn(&SourceFile, &dyn HasDebug) -> Option<Vec<Token>>, Token: Clone {
+impl<L> WithLexer<L>
+    where L: Lexer {
 
-    pub fn compile(&mut self, upto_phase: Phase, debug: bool, file_path: &str) -> Result<Option<(Vec<Token>, SourceFile)>, ExitCode> {
+    pub fn compile(&mut self, upto_phase: Phase, debug: bool, file_path: &str) -> Result<Option<(Vec<L::Token>, SourceFile)>, ExitCode> {
         let file = self.compiler.compile(upto_phase, debug, file_path)?;
 
         if self.compiler.final_phase == Phase::None {
             return Ok(None);
         }
 
-        let tokens = (self.lexer)(&file, &self.compiler)
+        let tokens = self.lexer.lex(&file, &self.compiler)
                 .ok_or_else(|| ExitCode::FAILURE)?;
 
         Ok(Some((tokens, file)))
     }
 
-    pub fn with_parser<P, Production>(self, parser: P) -> WithParser<P, L, Token, Production>
-        where L: Fn(&SourceFile, &dyn HasDebug) -> Option<Vec<Token>>,
-              P: Fn(&SourceFile, &dyn HasDebug, Vec<Token>) -> Option<Production>
+    pub fn with_parser<P>(self, parser: P) -> WithParser<P, L>
+        where P: Parser<L::Token>
     {
         WithParser { lexer: self, parser }
     }
 }
 
-pub struct WithParser<P, L, Token, Production>
-    where L: Fn(&SourceFile, &dyn HasDebug) -> Option<Vec<Token>>,
-          P: Fn(&SourceFile, &dyn HasDebug, Vec<Token>) -> Option<Production>,
-          Token: Clone
+pub struct WithParser<P, L>
 {
-    lexer: WithLexer<L, Token>,
+    lexer: WithLexer<L>,
     parser: P,
 }
 
-impl<'a, P, L, Token, Production> WithParser<P, L, Token, Production>
-where L: Fn(&SourceFile, &dyn HasDebug) -> Option<Vec<Token>>,
-      P: Fn(&SourceFile, &dyn HasDebug, Vec<Token>) -> Option<Production>,
-      Token: Clone
+impl<P, L> WithParser<P, L>
+where L: Lexer,
+      P: Parser<L::Token>
 {
-    pub fn compile(&mut self, upto_phase: Phase, debug: bool, file_path: &str) -> Result<Option<Production>, ExitCode> {
+    pub fn compile(&mut self, upto_phase: Phase, debug: bool, file_path: &str) -> Result<Option<P::Production>, ExitCode> {
         if self.lexer.compiler.final_phase == Phase::Lex {
             return Ok(None);
         }
 
         if let Some((tokens, file)) = self.lexer.compile(upto_phase, debug, file_path)? {
-            let program = (self.parser)(&file, &self.lexer.compiler, tokens)
+            let program = self.parser.parse(&file, &self.lexer.compiler, tokens)
                 .ok_or_else(|| ExitCode::FAILURE)?;
 
             Ok(Some(program))
