@@ -35,12 +35,14 @@ fn main() -> Result<(), ExitCode> {
         (true, true) => final_phase = Phase::Parse,
     }
 
-    let mut compiler = Compiler::new()
+    let mut compiler = Compiler::new(final_phase, args.explain)
         .with_lexer(run_lexer)
         .with_parser(run_parser);
 
 
-    let result = compiler.compile(final_phase, args.explain, &args.input)?;
-
+    compiler.load_main(&args.input)?;
+    let tokens = compiler.lex().ok_or(ExitCode::FAILURE)?;
+    let program = compiler.parse(tokens).ok_or(ExitCode::FAILURE)?;
+    
     Ok(())
 }

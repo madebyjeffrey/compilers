@@ -1,5 +1,5 @@
 use ariadne::{Color, Label, Report, ReportKind};
-use common::compiler::{HasDebug, Phase};
+use common::compiler::{Phase};
 use common::source_file::SourceFile;
 use super::super::lexical_analysis::tokens::Token;
 use super::ast::Program;
@@ -14,7 +14,7 @@ I usually implement this by parsing in terms of a "cursor" which is just a slice
  */
 
 #[allow(unused)]
-pub fn run_parser(file: &SourceFile, has_debug: &dyn HasDebug, tokens: Vec<Token>) -> Option<Program> {
+pub fn run_parser(file: &SourceFile, tokens: Vec<Token>) -> Option<Program> {
     println!("Parsing '{}'", file.filename);
 
     let token_col = TokenCollection::new(tokens);
@@ -25,9 +25,9 @@ pub fn run_parser(file: &SourceFile, has_debug: &dyn HasDebug, tokens: Vec<Token
 
     match parsed {
         Ok(program) => {
-            if has_debug.is_debug(Phase::Parse) {
-                println!("{:#?}", program);
-            }
+            // if has_debug.is_debug(Phase::Parse) {
+            //     println!("{:#?}", program);
+            // }
 
             Some(program)
         }

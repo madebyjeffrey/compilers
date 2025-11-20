@@ -1,20 +1,20 @@
 use ariadne::{Color, Label, Report, ReportKind};
-use common::compiler::{HasDebug, Phase};
+use common::compiler::{Phase};
 use common::source_file::SourceFile;
 use super::lexer::{Lexer, LexerError};
 use super::tokens::Token;
 
-pub fn run_lexer(file: &SourceFile, has_debug: &dyn HasDebug) -> Option<Vec<Token>> {
+pub fn run_lexer(file: &SourceFile) -> Option<Vec<Token>> {
     println!("Lexing '{}'", file.filename);
 
     let mut lexer = Lexer::new(&file.source.text());
     let (tokens, errors) = lexer.run();
 
-    if tokens.len() > 0 && has_debug.is_debug(Phase::Lex) {
-        for token in &tokens {
-            println!("{}", token.explain(&file.source.text()));
-        }
-    }
+    // if tokens.len() > 0 && has_debug.is_debug(Phase::Lex) {
+    //     for token in &tokens {
+    //         println!("{}", token.explain(&file.source.text()));
+    //     }
+    // }
 
     if errors.len() > 0 {
         for error in lexer.errors {
