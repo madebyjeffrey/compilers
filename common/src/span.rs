@@ -3,7 +3,7 @@ use std::fmt;
 use std::fmt::Display;
 use std::ops::Range;
 use ariadne::Span as ASpan;
-use crate::source_file::Id;
+use crate::source_file::{Id, SourceFile};
 
 #[derive(Debug, PartialEq, Clone, Eq)]
 pub struct Span {
@@ -35,6 +35,14 @@ impl Span {
 
     pub fn range(&self) -> Range<usize> {
         self._start..self._start + self._len
+    }
+
+    pub fn fileSpan(&self, source: &SourceFile) -> FileSpan {
+        FileSpan {
+            _file: source.filename.to_string(),
+            _len: self._len,
+            _start: self._start,
+        }
     }
 }
 
@@ -70,6 +78,29 @@ impl PartialOrd for Span {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Compare the 'value' field to determine the order
         self._start.partial_cmp(&other._start)
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Eq)]
+pub struct FileSpan {
+    _file: String,
+    _start: usize,
+    _len: usize
+}
+
+impl ASpan for FileSpan {
+    type SourceId = String;
+
+    fn source(&self) -> &Self::SourceId {
+        &self._file
+    }
+
+    fn start(&self) -> usize {
+        self._start
+    }
+
+    fn end(&self) -> usize {
+        self._start.saturating_add(self._len)
     }
 }
 

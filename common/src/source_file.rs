@@ -150,6 +150,18 @@ impl Cache<Id> for &SourceFile {
     }
 }
 
+impl Cache<String> for &SourceFile {
+    type Storage = String;
+
+    fn fetch(&mut self, _id: &String) -> Result<&Source<Self::Storage>, impl Debug> {
+        Ok::<_, Error>(&self.source)
+    }
+
+    fn display<'a>(&self, id: &'a String) -> Option<impl Display + 'a> {
+        Some(id)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

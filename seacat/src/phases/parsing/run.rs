@@ -32,30 +32,39 @@ pub fn run_parser(file: &SourceFile, tokens: Vec<Token>) -> Option<Program> {
             Some(program)
         }
         Err(ParseError::UnexpectedEOF(token)) => {
-            let _  = Report::build(ReportKind::Error, file.eof())
+            let _  = Report::build(ReportKind::Error, file.eof().fileSpan(file))
                 .with_message(format!("Unexpected end of file, expected token '{:?}'", token))
+                .with_label(Label::new(file.eof().fileSpan(file))
+                    .with_message("Token found here")
+                    .with_color(Color::Primary))
                 .finish()
                 .print(file);
             None
         },
         Err(ParseError::SyntaxError(found, wanted)) => {
-            let _ = Report::build(ReportKind::Error, found.span)
+            let _ = Report::build(ReportKind::Error, found.span.fileSpan(file))
                 .with_message(format!("Syntax error. Expected token '{:?}'", wanted))
+                .with_label(Label::new(found.span.fileSpan(file))
+                    .with_message(format!("Expecting {:?} here", wanted))
+                    .with_color(Color::Primary))
                 .finish()
                 .print(file);
             None
         },
         Err(ParseError::InvalidNumber(found, error)) => {
-            let _ = Report::build(ReportKind::Error, found.span)
+            let _ = Report::build(ReportKind::Error, found.span.fileSpan(file))
                 .with_message(format!("Invalid constant: '{:?}'", error))
+                .with_label(Label::new(found.span.fileSpan(file))
+                    .with_message("Invalid constant here")
+                    .with_color(Color::Primary))
                 .finish()
                 .print(file);
             None
         },
         Err(ParseError::ExpectingEOF(token)) => {
-            let _ = Report::build(ReportKind::Error, token.span.clone())
+            let _ = Report::build(ReportKind::Error, token.span.fileSpan(file))
                 .with_message(format!("Expecting EOF"))
-                .with_label(Label::new(token.span)
+                .with_label(Label::new(token.span.fileSpan(file))
                     .with_message("Unexpected token here.")
                     .with_color(Color::Primary))
                 .finish()

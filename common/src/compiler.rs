@@ -100,15 +100,24 @@ where L: Lexer,
 }
 
 impl<L, P> Compiler<L, P> {
-    pub fn load_main(&self, file_path: &str) -> Result<SourceFile, ExitCode> {
+    pub fn load_main(&mut self, file_path: &str) -> Result<(), ExitCode> {
         let main = SourceFile::from_file(Id::Main, file_path)
             .inspect_err(|err| eprintln!("Couldn't read file: {}", err))
             .or(Err(ExitCode::FAILURE))?;
 
-        Ok(main)
+        self.main = Some(main);
+
+        Ok(())
+    }
+
+    pub fn should_stop(&self, phase: Phase) -> Result<(), ExitCode> {
+        if self.upto_phase == phase {
+            Err(ExitCode::SUCCESS)
+        } else {
+            Ok(())
+        }
     }
 }
-
 
 
 // impl<L> Compiler<L, NoParser>

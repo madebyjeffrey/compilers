@@ -20,10 +20,10 @@ pub fn run_lexer(file: &SourceFile) -> Option<Vec<Token>> {
         for error in lexer.errors {
             match error {
                 LexerError::UnexpectedEofInsideComment(span) => {
-                    Report::build(ReportKind::Error, span.clone())
+                    Report::build(ReportKind::Error, span.fileSpan(file))
                         .with_code("L001")
                         .with_message("Comment started but not finished before end of file.")
-                        .with_label(Label::new(span)
+                        .with_label(Label::new(span.fileSpan(file))
                             .with_message("Comment starts here")
                             .with_color(Color::Primary))
                         .finish()
@@ -31,13 +31,13 @@ pub fn run_lexer(file: &SourceFile) -> Option<Vec<Token>> {
                         .unwrap();
                 },
                 LexerError::NestedComment(comment_start, nested_comment_start) => {
-                    Report::build(ReportKind::Error, comment_start.clone())
+                    Report::build(ReportKind::Error, comment_start.fileSpan(file))
                         .with_code("L002")
                         .with_message("Unknown token.")
-                        .with_label(Label::new(comment_start)
+                        .with_label(Label::new(comment_start.fileSpan(file))
                             .with_message("Comment starts here")
                             .with_color(Color::Primary))
-                        .with_label(Label::new(nested_comment_start)
+                        .with_label(Label::new(nested_comment_start.fileSpan(file))
                             .with_message("Nested comment starts here")
                             .with_color(Color::Primary))
                         .finish()
@@ -45,10 +45,10 @@ pub fn run_lexer(file: &SourceFile) -> Option<Vec<Token>> {
                         .unwrap();
                 },
                 LexerError::UnknownToken(span) => {
-                    Report::build(ReportKind::Error, span.clone())
+                    Report::build(ReportKind::Error, span.fileSpan(file))
                         .with_code("L003")
                         .with_message("Unknown token.")
-                        .with_label(Label::new(span)
+                        .with_label(Label::new(span.fileSpan(file))
                             .with_message("Unknown token")
                             .with_color(Color::Primary))
                         .finish()

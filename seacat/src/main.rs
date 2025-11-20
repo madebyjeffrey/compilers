@@ -39,10 +39,11 @@ fn main() -> Result<(), ExitCode> {
         .with_lexer(run_lexer)
         .with_parser(run_parser);
 
-
     compiler.load_main(&args.input)?;
     let tokens = compiler.lex().ok_or(ExitCode::FAILURE)?;
+    compiler.should_stop(Phase::Lex)?;
     let program = compiler.parse(tokens).ok_or(ExitCode::FAILURE)?;
+    compiler.should_stop(Phase::Parse)?;
     
     Ok(())
 }
