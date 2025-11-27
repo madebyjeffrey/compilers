@@ -1,0 +1,21 @@
+{
+  "name": "mnemonix-docs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "pregenerate": "mmdc -i instructions.md -o ../instructions.md --configFile mermaid-config.json",
+    "generate": "pandoc --embed-resources --standalone ../instructions.md -o ../instructions.html -H no-diagram-label.css"
+
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/madebyjeffrey/compilers.git"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "11.12.0",
+    "mermaid": "11.12.1",
+    "commonmark": "0.31.2"
+  },
+  "private": true
+}

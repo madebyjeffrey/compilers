@@ -12,6 +12,7 @@ pub enum Phase {
 
 pub struct NoLexer;
 pub struct NoParser;
+pub struct NoCodegen;
 
 pub trait Lexer {
     type Token: Clone;
@@ -46,23 +47,41 @@ where
     }
 }
 
+pub trait Codegen<Production> {
+    type IrProduction;
+
+    fn codegen(&self, production: Production) -> Self::IrProduction;
+}
+
+impl<F, Production, IrProduction> Codegen<Production> for F
+where
+    F: Fn(Production) -> IrProduction,
+{
+    type IrProduction = IrProduction;
+    fn codegen(&self, production: Production) -> Self::IrProduction {
+        (self)(production)
+    }
+}
+
 fn is_debug(final_phase: Phase, phase: Phase, debug: bool) -> bool {
     phase == final_phase && debug
 }
 
-pub struct Compiler<L, P> {
+pub struct Compiler<L, P, C> {
     lexer: L,
     parser: P,
+    codegen: C,
     upto_phase: Phase,
     debug: bool,
     main: Option<SourceFile>,
 }
 
-impl Compiler<NoLexer, NoParser> {
+impl Compiler<NoLexer, NoParser, NoCodegen> {
     pub fn new(upto_phase: Phase, debug: bool) -> Self {
         Self {
             lexer: NoLexer,
             parser: NoParser,
+            codegen: NoCodegen,
             upto_phase,
             debug, 
             main: None,
@@ -70,28 +89,34 @@ impl Compiler<NoLexer, NoParser> {
     }
 }
 
-impl<L0, P0> Compiler<L0, P0> {
-    pub fn with_lexer<L>(self, lexer: L) -> Compiler<L, P0> {
-        let Self { parser, upto_phase, debug, main, .. } = self;
+impl<L0, P0, C0> Compiler<L0, P0, C0> {
+    pub fn with_lexer<L>(self, lexer: L) -> Compiler<L, P0, C0> {
+        let Self { parser, codegen, upto_phase, debug, main, .. } = self;
 
-        Compiler { lexer, parser, upto_phase, debug, main }
+        Compiler { lexer, parser, codegen, upto_phase, debug, main }
     }
 
-    pub fn with_parser<P>(self, parser: P) -> Compiler<L0, P> {
-        let Self { lexer, upto_phase, debug, main, .. } = self;
+    pub fn with_parser<P>(self, parser: P) -> Compiler<L0, P, C0> {
+        let Self { lexer, codegen, upto_phase, debug, main, .. } = self;
 
-        Compiler { lexer, parser, upto_phase, debug, main }
+        Compiler { lexer, parser, codegen, upto_phase, debug, main }
+    }
+    
+    pub fn with_codegen<C>(self, codegen: C) -> Compiler<L0, P0, C> {
+        let Self { lexer, parser, upto_phase, main, debug, .. } = self;
+        
+        Compiler { lexer, parser, codegen, upto_phase, debug, main }
     }
 }
 
-impl<L, P> Compiler<L, P>
+impl<L, P, C> Compiler<L, P, C>
 where L: Lexer {
     pub fn lex(&self) -> Option<Vec<L::Token>> {
         self.main.as_ref().and_then(|main| self.lexer.lex(main))
     }
 }
 
-impl<L, P> Compiler<L, P>
+impl<L, P, C> Compiler<L, P, C>
 where L: Lexer,
       P: Parser<L::Token> {
     pub fn parse(&mut self, tokens: Vec<L::Token>) -> Option<P::Production> {
@@ -99,7 +124,17 @@ where L: Lexer,
     }
 }
 
-impl<L, P> Compiler<L, P> {
+impl<L, P, C> Compiler<L, P, C>
+where L: Lexer,
+      P: Parser<L::Token>,
+      C: Codegen<P::Production>
+{
+    pub fn codegen(&mut self, production: P::Production) -> C::IrProduction {
+        self.codegen.codegen(production)
+    }
+}
+
+impl<L, P, C> Compiler<L, P, C> {
     pub fn load_main(&mut self, file_path: &str) -> Result<(), ExitCode> {
         let main = SourceFile::from_file(Id::Main, file_path)
             .inspect_err(|err| eprintln!("Couldn't read file: {}", err))
@@ -110,54 +145,7 @@ impl<L, P> Compiler<L, P> {
         Ok(())
     }
 
-    pub fn should_stop(&self, phase: Phase) -> Result<(), ExitCode> {
-        if self.upto_phase == phase {
-            Err(ExitCode::SUCCESS)
-        } else {
-            Ok(())
-        }
+    pub fn should_stop(&self, phase: Phase) -> bool {
+        self.upto_phase == phase
     }
 }
-
-
-// impl<L> Compiler<L, NoParser>
-// where L: Lexer {
-//         pub fn lex(&self, upto_phase: Phase, debug: bool, file_path: &str) -> Result<Option<Vec<L::Token>>, ExitCode> {
-//             let main = self.load_main(upto_phase, debug, file_path)?;
-// 
-//             if upto_phase == Phase::None {
-//                 return Ok(None);
-//             }
-// 
-//             let tokens = self.lexer.lex(&main)
-//                     .ok_or_else(|| ExitCode::FAILURE)?;
-// 
-//             if (is_debug(upto_phase, Phase::Lex, debug)) {
-//                 // output some representation of the tokens
-//             }
-// 
-//             Ok(Some(tokens))
-//         }
-// }
-// 
-// impl<L, P> Compiler<L, P>
-// where L: Lexer,
-//       P: Parser<L::Token>{
-//     pub fn parse_with_main(&self, upto_phase: Phase, debug: bool, file_path: &str) -> Result<Option<P::Production>, ExitCode> {
-//         let tokens = self.lex_with_main(upto_phase, debug, file_path)?;
-// 
-//         if upto_phase == Phase::Lex {
-//             return Ok(None);
-//         }
-// 
-// 
-//         let program = self.parser.parse(&main, tokens)
-//             .ok_or_else(|| ExitCode::FAILURE)?;
-// 
-//         if (is_debug(upto_phase, Phase::Lex, debug)) {
-//             // output some representation of the production token
-//         }
-// 
-//         Ok(Some(program))
-//     }
-// }

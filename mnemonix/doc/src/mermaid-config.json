@@ -1,0 +1,8 @@
+{
+  "packet": {
+    "bitsPerRow": 8,
+    "showBits": true,
+    "paddingX": 10,
+    "paddingY": 10
+  } 
+}

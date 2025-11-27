@@ -1,13 +1,13 @@
 pub struct Program {
-    functions: FunctionDefinition,
+    pub function: FunctionDefinition,
 }
 
 pub struct FunctionDefinition {
-    name: String,
-    instructions: Vec<Instructions>,
+    pub name: String,
+    pub instructions: Vec<Instruction>,
 }
 
-pub enum Instructions {
+pub enum Instruction {
     Mov { src: Operand, dst: Operand },
     Ret,
 }
