@@ -23,7 +23,6 @@ imm16: signed or unsigned 16 bit value
 
 ```mermaid
 packet
-accDescr: ""
 +6: "100000"
 +2: "dst r16"
 +16: "imm16"
