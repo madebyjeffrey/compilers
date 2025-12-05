@@ -1,0 +1,14 @@
+
+program :: statement*
+statement :: label
+           | instruction
+
+label :: id colon
+instruction :: id operands
+
+operands :: operand
+          | operand comma operands
+
+operand :: register
+         | constant
+
